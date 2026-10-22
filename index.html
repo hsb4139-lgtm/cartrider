@@ -34,23 +34,53 @@
       display: block;
     }
 
-    /* 부스터 속도선 이펙트 */
+    /* 극적인 부스터 속도선 & 화면 이펙트 */
     #speed-lines {
       position: absolute;
       inset: 0;
       pointer-events: none;
       opacity: 0;
-      transition: opacity 0.18s ease;
-      background: radial-gradient(circle, transparent 42%, rgba(56, 189, 248, 0.28) 80%, rgba(250, 204, 21, 0.65) 100%);
+      transition: opacity 0.12s ease;
+      background:
+        repeating-conic-gradient(from 0deg, transparent 0deg 4deg, rgba(255, 255, 255, 0.22) 4deg 5deg),
+        radial-gradient(circle, transparent 35%, rgba(56, 189, 248, 0.45) 75%, rgba(250, 204, 21, 0.85) 100%);
       z-index: 5;
     }
     #speed-lines.active {
       opacity: 1;
-      animation: pulseSpeed 0.14s infinite alternate;
+      animation: pulseSpeed 0.1s infinite alternate;
     }
     @keyframes pulseSpeed {
       from { transform: scale(1); }
-      to { transform: scale(1.03); }
+      to { transform: scale(1.04); }
+    }
+
+    /* 거미줄/잉크 피격 화면 오버레이 */
+    #screen-status-fx {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 6;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 4px 12px #000;
+    }
+    #screen-status-fx.webbed {
+      opacity: 1;
+      background:
+        radial-gradient(circle, rgba(255,255,255,0.15) 20%, rgba(226,232,240,0.65) 100%),
+        repeating-linear-gradient(45deg, transparent 0 28px, rgba(255,255,255,0.45) 28px 31px),
+        repeating-linear-gradient(-45deg, transparent 0 28px, rgba(255,255,255,0.45) 28px 31px);
+    }
+    #screen-status-fx.inked {
+      opacity: 1;
+      background: radial-gradient(circle, rgba(14, 165, 233, 0.35) 20%, rgba(30, 58, 138, 0.82) 90%);
     }
 
     /* 공통 오버레이 */
@@ -680,6 +710,7 @@
 
   <canvas id="game-canvas"></canvas>
   <div id="speed-lines"></div>
+  <div id="screen-status-fx"></div>
 
   <!-- 우측 상단 글로벌 옵션 바 -->
   <div id="top-settings">
@@ -794,8 +825,8 @@
       totalLaps: 3,
       totalRacers: 8,
       baseMaxSpeed: 68,
-      boostBonusSpeed: 30,
-      boostDuration: 1.65,
+      boostBonusSpeed: 36,       // 부스터 가속 체감 대폭 강화!
+      boostDuration: 1.85,
       maxBoostCharges: 2,
       maxHeldItems: 2,           // 아이템 최대 2개까지 동시 보유 가능
       itemBoxRespawnSec: 1.8,    // 앞차가 먹어도 1.8초 뒤 즉시 재생성
@@ -929,13 +960,13 @@
       ],
 
       items: {
-        eraserTrap:     { id: 'eraserTrap',     name: '지우개 가루 뭉치',   icon: '🧼' },
+        eraserTrap:     { id: 'eraserTrap',     name: '지우개 거미줄 덫',   icon: '🕸️' },
         paperShield:    { id: 'paperShield',    name: '색종이 방어막',     icon: '🛡️' },
-        pencilBooster:  { id: 'pencilBooster',  name: '연필심 로켓 부스터', icon: '🚀' },
-        inkSplash:      { id: 'inkSplash',      name: '잉크 물방울 폭탄',   icon: '💧' },
-        clipMagnet:     { id: 'clipMagnet',     name: '클립 자석 견인기',   icon: '🧲' },
-        warpSpring:     { id: 'warpSpring',     name: '용수철 워프 부스터', icon: '⚡' },
-        stickyNoteWave: { id: 'stickyNoteWave', name: '포스트잇 바람개비', icon: '🍃' }
+        pencilBooster:  { id: 'pencilBooster',  name: '연필심 메가부스터', icon: '🚀' },
+        inkSplash:      { id: 'inkSplash',      name: '잉크 물감옥 폭탄',   icon: '💧' },
+        clipMagnet:     { id: 'clipMagnet',     name: '클립 번개자석',     icon: '🧲' },
+        warpSpring:     { id: 'warpSpring',     name: '용수철 황금워프',   icon: '⚡' },
+        stickyNoteWave: { id: 'stickyNoteWave', name: '포스트잇 회오리',   icon: '🌪️' }
       },
 
       racers: [
@@ -964,7 +995,7 @@
           emoji: '🧼',
           desc: '실수를 쓱싹 지워 주는 다정한 친구. 부딪혀도 금방 속도를 회복한다.',
           skillTitle: '말랑 쿠션',
-          skillDesc: '벽 충돌 및 방해 아이템 감속 시간 50% 단축',
+          skillDesc: '거미줄·물감옥·회오리 상태이상 시간 45% 단축',
           kartColor: 0xf9a8d4,
           accentColor: 0xec4899,
           suitColor: 0x6ee7b7,
@@ -1051,14 +1082,15 @@
         else this.beep(440, 0.18, 'sine', null, 0.18);
       }
       playBoost() {
-        this.beep(180, 0.42, 'sawtooth', 780, 0.2);
+        this.beep(140, 0.55, 'sawtooth', 980, 0.24);
+        setTimeout(() => this.beep(420, 0.35, 'triangle', 1240, 0.18), 60);
       }
       playItemPickup() {
         this.beep(520, 0.09, 'triangle', 880, 0.15);
         setTimeout(() => this.beep(780, 0.11, 'triangle', 1180, 0.15), 65);
       }
       playHit() {
-        this.beep(260, 0.26, 'sawtooth', 95, 0.2);
+        this.beep(320, 0.35, 'sawtooth', 75, 0.25);
       }
       playWin() {
         [523, 659, 784, 1046].forEach((f, idx) => {
@@ -1069,7 +1101,7 @@
     const sfx = new SoundFX();
 
     /********************************************************************
-     * 3. 3D 카트 모델 (서스펜션 롤링/피칭 + 앞바퀴 조향 분리)
+     * 3. 3D 카트 모델 & 레퍼런스 이미지 스타일 극적인 아이템/부스터 이펙트 메쉬
      ********************************************************************/
     function createRacerKartMesh(racerData) {
       const rootGroup = new THREE.Group();
@@ -1115,26 +1147,78 @@
       wingTop.position.set(0, 1.32, -1.68);
       suspensionGroup.add(wingLeft, wingRight, wingTop);
 
-      const pipeGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.6, 8);
+      // 대구경 듀얼 부스터 노즐
+      const pipeGeo = new THREE.CylinderGeometry(0.24, 0.32, 0.75, 10);
       pipeGeo.rotateX(Math.PI / 2);
       const pipeL = new THREE.Mesh(pipeGeo, chromeMat);
-      pipeL.position.set(-0.5, 0.58, -1.9);
+      pipeL.position.set(-0.58, 0.62, -1.95);
       const pipeR = pipeL.clone();
-      pipeR.position.x = 0.5;
+      pipeR.position.x = 0.58;
       suspensionGroup.add(pipeL, pipeR);
 
-      const flameMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-      const flameGeo = new THREE.ConeGeometry(0.32, 1.6, 8);
-      flameGeo.rotateX(-Math.PI / 2);
-      const flameL = new THREE.Mesh(flameGeo, flameMat);
-      flameL.position.set(-0.5, 0.58, -2.8);
-      const flameR = flameL.clone();
-      flameR.position.x = 0.5;
-      flameL.visible = false;
-      flameR.visible = false;
-      suspensionGroup.add(flameL, flameR);
-      rootGroup.userData.flames = [flameL, flameR];
+      // [극적인 이펙트 1] 레퍼런스 이미지 스타일 초대형 부스터 그룹 (노란색 거대 노즐 후광 원판 + 2중 화염 기둥 + 4줄 레이저 잔상 + 전방 하늘색 에어로 실드 콘)
+      const megaBoostGroup = new THREE.Group();
+      megaBoostGroup.visible = false;
+      suspensionGroup.add(megaBoostGroup);
+      rootGroup.userData.megaBoostGroup = megaBoostGroup;
 
+      // 1-A. 배기구 뒤 거대한 노란/주황 발광 후광 원판 2개 (레퍼런스 이미지 하단 카트 연출)
+      const haloOuterMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.88, side: THREE.DoubleSide });
+      const haloInnerMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, side: THREE.DoubleSide });
+      [-0.65, 0.65].forEach(xPos => {
+        const haloOuter = new THREE.Mesh(new THREE.CircleGeometry(1.15, 20), haloOuterMat);
+        haloOuter.position.set(xPos, 0.68, -2.28);
+        const haloInner = new THREE.Mesh(new THREE.CircleGeometry(0.55, 16), haloInnerMat);
+        haloInner.position.set(xPos, 0.68, -2.25);
+        megaBoostGroup.add(haloOuter, haloInner);
+
+        // 길게 뻗는 거대 외곽 주황/적색 제트 화염 기둥 (길이 6.5m)
+        const outerFlameGeo = new THREE.ConeGeometry(0.78, 6.5, 12, 1, true);
+        outerFlameGeo.rotateX(-Math.PI / 2);
+        const outerFlameMat = new THREE.MeshBasicMaterial({ color: 0xff5500, transparent: true, opacity: 0.82, side: THREE.DoubleSide });
+        const outerFlame = new THREE.Mesh(outerFlameGeo, outerFlameMat);
+        outerFlame.position.set(xPos, 0.68, -5.5);
+
+        // 중심부 초고온 화이트/옐로우 코어 화염
+        const coreFlameGeo = new THREE.ConeGeometry(0.40, 4.8, 10);
+        coreFlameGeo.rotateX(-Math.PI / 2);
+        const coreFlameMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+        const coreFlame = new THREE.Mesh(coreFlameGeo, coreFlameMat);
+        coreFlame.position.set(xPos, 0.68, -4.6);
+
+        megaBoostGroup.add(outerFlame, coreFlame);
+      });
+
+      // 1-B. 레퍼런스 이미지처럼 바닥으로 길게 뻗는 4줄 컬러 제트 스트림 레이저 라인
+      const beamColors = [0xff3b30, 0xfacc15, 0x38bdf8, 0xf472b6];
+      [-1.1, -0.38, 0.38, 1.1].forEach((xOff, idx) => {
+        const jetBeamGeo = new THREE.PlaneGeometry(0.28, 9.5);
+        jetBeamGeo.rotateX(-Math.PI / 2);
+        const jetBeamMat = new THREE.MeshBasicMaterial({
+          color: beamColors[idx],
+          transparent: true,
+          opacity: 0.78,
+          side: THREE.DoubleSide
+        });
+        const jetBeam = new THREE.Mesh(jetBeamGeo, jetBeamMat);
+        jetBeam.position.set(xOff, 0.26, -6.5);
+        megaBoostGroup.add(jetBeam);
+      });
+
+      // 1-C. 차체 전방을 감싸는 반투명 하늘색 에어로 바람막이 충격파 콘 (레퍼런스 우측 하단 카트 연출)
+      const aeroConeGeo = new THREE.CylinderGeometry(0.7, 2.35, 4.4, 18, 1, true);
+      aeroConeGeo.rotateX(Math.PI / 2);
+      const aeroConeMat = new THREE.MeshBasicMaterial({
+        color: 0x7dd3fc,
+        transparent: true,
+        opacity: 0.36,
+        side: THREE.DoubleSide
+      });
+      const aeroCone = new THREE.Mesh(aeroConeGeo, aeroConeMat);
+      aeroCone.position.set(0, 0.95, 0.65);
+      megaBoostGroup.add(aeroCone);
+
+      // 바퀴 4개
       const wheelGeo = new THREE.CylinderGeometry(0.52, 0.52, 0.48, 14);
       wheelGeo.rotateZ(Math.PI / 2);
       const rimGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.5, 10);
@@ -1162,6 +1246,7 @@
       rootGroup.userData.frontWheels = frontWheelPivots;
       rootGroup.userData.allWheels = allWheelMeshes;
 
+      // 운전석 & 캐릭터
       const steeringWheel = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.05, 6, 12), darkMat);
       steeringWheel.position.set(0, 1.15, 0.55);
       steeringWheel.rotation.x = -0.5;
@@ -1207,13 +1292,87 @@
         suspensionGroup.add(hair, bunL, bunR, clipLoop);
       }
 
-      const shieldGeo = new THREE.SphereGeometry(2.4, 14, 12);
-      const shieldMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35, wireframe: true });
-      const shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
-      shieldMesh.position.y = 1.0;
-      shieldMesh.visible = false;
-      rootGroup.add(shieldMesh);
-      rootGroup.userData.shieldMesh = shieldMesh;
+      // [극적인 이펙트 2] 색종이 방어막 (2중 회전 육각 에너지 배리어)
+      const shieldGroup = new THREE.Group();
+      const shieldInner = new THREE.Mesh(
+        new THREE.SphereGeometry(2.55, 16, 14),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.28 })
+      );
+      const shieldOuter = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(2.75, 1),
+        new THREE.MeshBasicMaterial({ color: 0xbae6fd, wireframe: true, transparent: true, opacity: 0.85 })
+      );
+      shieldGroup.add(shieldInner, shieldOuter);
+      shieldGroup.position.y = 1.1;
+      shieldGroup.visible = false;
+      rootGroup.add(shieldGroup);
+      rootGroup.userData.shieldMesh = shieldGroup;
+
+      // [극적인 이펙트 3] 지우개 함정 피격 시 2초간 차를 꽁꽁 묶는 '거대 3D 거미줄 케이지'
+      const spiderWebGroup = new THREE.Group();
+      const webWireMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.92 });
+      const webCocoons = new THREE.Mesh(new THREE.IcosahedronGeometry(2.7, 2), webWireMat);
+      const webRing1 = new THREE.Mesh(new THREE.RingGeometry(0.6, 3.2, 8, 4), webWireMat);
+      webRing1.rotation.x = -Math.PI / 2;
+      webRing1.position.y = -0.7;
+      const webRing2 = new THREE.Mesh(new THREE.RingGeometry(0.5, 2.8, 8, 3), webWireMat);
+      webRing2.position.set(0, 0.5, 1.4);
+      spiderWebGroup.add(webCocoons, webRing1, webRing2);
+      spiderWebGroup.position.y = 1.1;
+      spiderWebGroup.visible = false;
+      rootGroup.add(spiderWebGroup);
+      rootGroup.userData.spiderWebMesh = spiderWebGroup;
+
+      // [극적인 이펙트 4] 잉크 물폭탄 피격 시 차를 가두어 띄우는 '거대 물감옥 방울(Water Prison)'
+      const waterPrisonGroup = new THREE.Group();
+      const bubbleSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(2.65, 18, 16),
+        new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.48 })
+      );
+      const bubbleHighlight = new THREE.Mesh(
+        new THREE.SphereGeometry(2.7, 12, 10),
+        new THREE.MeshBasicMaterial({ color: 0x7dd3fc, wireframe: true, transparent: true, opacity: 0.45 })
+      );
+      waterPrisonGroup.add(bubbleSphere, bubbleHighlight);
+      waterPrisonGroup.position.y = 1.3;
+      waterPrisonGroup.visible = false;
+      rootGroup.add(waterPrisonGroup);
+      rootGroup.userData.waterPrisonMesh = waterPrisonGroup;
+
+      // [극적인 이펙트 5] 용수철 황금워프 발동 시 '황금빛 번개 오라(Golden Lightning Aura)' (레퍼런스 중앙 캐릭터 연출)
+      const warpAuraGroup = new THREE.Group();
+      const goldSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(2.6, 16, 14),
+        new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.35 })
+      );
+      const goldRing1 = new THREE.Mesh(
+        new THREE.TorusGeometry(2.8, 0.14, 8, 24),
+        new THREE.MeshBasicMaterial({ color: 0xfef08a })
+      );
+      goldRing1.rotation.x = Math.PI / 3;
+      const goldRing2 = goldRing1.clone();
+      goldRing2.rotation.x = -Math.PI / 3;
+      warpAuraGroup.add(goldSphere, goldRing1, goldRing2);
+      warpAuraGroup.position.y = 1.2;
+      warpAuraGroup.visible = false;
+      rootGroup.add(warpAuraGroup);
+      rootGroup.userData.warpAuraMesh = warpAuraGroup;
+
+      // [극적인 이펙트 6] 포스트잇 회오리 피격 시 차를 감싸 돌리는 '거대 핑크/민트 회오리 토네이도'
+      const tornadoGroup = new THREE.Group();
+      const tornadoCone = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.4, 0.7, 6.5, 14, 4, true),
+        new THREE.MeshBasicMaterial({ color: 0xf472b6, wireframe: true, transparent: true, opacity: 0.85 })
+      );
+      const tornadoInner = new THREE.Mesh(
+        new THREE.CylinderGeometry(2.6, 0.5, 6.0, 12, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0x5eead4, transparent: true, opacity: 0.38, side: THREE.DoubleSide })
+      );
+      tornadoGroup.add(tornadoCone, tornadoInner);
+      tornadoGroup.position.y = 3.0;
+      tornadoGroup.visible = false;
+      rootGroup.add(tornadoGroup);
+      rootGroup.userData.tornadoMesh = tornadoGroup;
 
       return rootGroup;
     }
@@ -1345,7 +1504,7 @@
       const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 1.5, 24, 6), lightMat);
       spire.position.y = 158;
 
-      g.add(tier1, deck1, tier2, tier3, core, beacon, spire);
+      g.add(tier1, deck1, tier2, deck2, tier3, core, beacon, spire);
       return g;
     }
 
@@ -1447,35 +1606,29 @@
     let trackTotalLength = 1;
     let worldGroup = null;
 
-    // 바닥 도로만 100% 꽉 채워 그리는 고대비 일반 4차선 자동차 도로 텍스처
     function createDedicatedAsphaltRoadTexture() {
       const c = document.createElement('canvas');
       c.width = 1024;
       c.height = 512;
       const ctx = c.getContext('2d');
 
-      // 1) 다크 아스팔트 베이스
       ctx.fillStyle = '#1e2430';
       ctx.fillRect(0, 0, 1024, 512);
 
-      // 차선 중앙부의 미세한 타이어 주행 흔적 농담
       ctx.fillStyle = '#171c26';
       ctx.fillRect(110, 0, 180, 512);
       ctx.fillRect(330, 0, 150, 512);
       ctx.fillRect(544, 0, 150, 512);
       ctx.fillRect(734, 0, 180, 512);
 
-      // 2) 양 끝 굵고 선명한 흰색 길가장자리 실선
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(28, 0, 22, 512);
       ctx.fillRect(974, 0, 22, 512);
 
-      // 3) 한가운데 선명한 노란색 중앙 분리 복선 (Double Solid Yellow Line)
       ctx.fillStyle = '#facc15';
       ctx.fillRect(490, 0, 16, 512);
       ctx.fillRect(518, 0, 16, 512);
 
-      // 4) 1·2차선 및 3·4차선을 나누는 흰색 점선
       ctx.fillStyle = '#ffffff';
       const dashLen = 140;
       const gapLen = 116;
@@ -1491,14 +1644,12 @@
       return tex;
     }
 
-    // 도로 양옆 연석·보도블록·와플 옹벽 전용 텍스처
     function createSideEnvironmentAtlasTexture(mapConfig) {
       const c = document.createElement('canvas');
       c.width = 512;
       c.height = 512;
       const ctx = c.getContext('2d');
 
-      // 1) 좌측 붉은 벽돌 난간
       ctx.fillStyle = mapConfig.wallTint;
       ctx.fillRect(0, 0, 72, 512);
       ctx.strokeStyle = mapConfig.wallAccent;
@@ -1507,7 +1658,6 @@
         ctx.strokeRect(2, y, 68, 64);
       }
 
-      // 2) 좌측 노란·연두 격자 타일 보도블록
       const swX = 72, swW = 122;
       for (let r = 0; r < 8; r++) {
         for (let cl = 0; cl < 3; cl++) {
@@ -1519,7 +1669,6 @@
         }
       }
 
-      // 3) 초록·흰색 입체 연석
       const curbLX = 194, curbLW = 62;
       for (let r = 0; r < 8; r++) {
         ctx.fillStyle = (r % 2 === 0) ? mapConfig.curbPrimary : '#ffffff';
@@ -1529,7 +1678,6 @@
         ctx.strokeRect(curbLX, r * 64, curbLW, 64);
       }
 
-      // 4) 우측 2단 주황·흰색 연석
       const curbRX = 256, curbRW = 62;
       for (let r = 0; r < 8; r++) {
         ctx.fillStyle = (r % 2 === 0) ? mapConfig.curbSecondary : '#ffffff';
@@ -1539,7 +1687,6 @@
         ctx.strokeRect(curbRX, r * 64, curbRW, 64);
       }
 
-      // 5) 우측 다이아몬드(와플) 양각 경사 옹벽
       const wallX = 318, wallW = 154;
       ctx.fillStyle = mapConfig.wallTint;
       ctx.fillRect(wallX, 0, wallW, 512);
@@ -1557,7 +1704,6 @@
         ctx.stroke();
       }
 
-      // 6) 우측 옹벽 상단 베이지 코핑 캡
       ctx.fillStyle = '#fed7aa';
       ctx.fillRect(472, 0, 40, 512);
 
@@ -1652,15 +1798,13 @@
       trackTotalLength = trackCurve.getLength();
       trackPoints = trackCurve.getSpacedPoints(TRACK_SAMPLES);
 
-      const halfW = TRACK_WIDTH * 0.5; // 14.0
+      const halfW = TRACK_WIDTH * 0.5;
 
-      // 1) 독립된 바닥 도로 메쉬 (일반 4차선 아스팔트 도로)
       const roadBedGeo = new THREE.BufferGeometry();
       const rbPos = [];
       const rbUvs = [];
       const rbIdx = [];
 
-      // 2) 도로 양옆 구조물 메쉬 (연석·보도블록·벽돌난간·와플 옹벽)
       const sideEnvGeo = new THREE.BufferGeometry();
       const sePos = [];
       const seUvs = [];
@@ -1681,7 +1825,6 @@
         const tangent = trackCurve.getTangentAt(t).normalize();
         const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
 
-        // 바닥 4차선 아스팔트 정점 (지형 및 강물과 겹치지 않도록 y = 0.16에 배치)
         const pRoadL = pt.clone().addScaledVector(normal, -halfW);
         const pRoadR = pt.clone().addScaledVector(normal, halfW);
         rbPos.push(pRoadL.x, 0.16, pRoadL.z, pRoadR.x, 0.16, pRoadR.z);
@@ -1693,16 +1836,15 @@
           rbIdx.push(rbBase + 1, rbBase + 2, rbBase + 3);
         }
 
-        // 양옆 보도블록 & 연석 & 와플 옹벽 정점
         const sideOffsets = [
-          -(halfW + 8.6), // [0] 좌측 벽돌 난간 상단
-          -(halfW + 7.2), // [1] 좌측 보도블록 바깥
-          -(halfW + 1.8), // [2] 좌측 보도블록 안쪽 (연석 위)
-          -halfW,         // [3] 좌측 도로 경계
-          halfW,          // [4] 우측 도로 경계
-          halfW + 2.0,    // [5] 우측 2단 연석 위
-          halfW + 5.8,    // [6] 우측 와플 옹벽 상단
-          halfW + 7.4     // [7] 우측 옹벽 코핑 캡
+          -(halfW + 8.6),
+          -(halfW + 7.2),
+          -(halfW + 1.8),
+          -halfW,
+          halfW,
+          halfW + 2.0,
+          halfW + 5.8,
+          halfW + 7.4
         ];
         const sideHeights = [2.3, 0.54, 0.54, 0.16, 0.16, 0.62, 5.8, 6.0];
         const sideU = [0.00, 0.14, 0.38, 0.50, 0.50, 0.62, 0.92, 1.00];
@@ -1795,7 +1937,6 @@
         }
       }
 
-      // 1) 아스팔트 도로 메쉬 추가 (DoubleSide 및 BasicMaterial로 언제나 또렷하게 표시)
       roadBedGeo.setAttribute('position', new THREE.Float32BufferAttribute(rbPos, 3));
       roadBedGeo.setAttribute('uv', new THREE.Float32BufferAttribute(rbUvs, 2));
       roadBedGeo.setIndex(rbIdx);
@@ -1806,7 +1947,6 @@
       );
       worldGroup.add(roadBedMesh);
 
-      // 2) 양옆 연석·보도·옹벽 메쉬 추가
       sideEnvGeo.setAttribute('position', new THREE.Float32BufferAttribute(sePos, 3));
       sideEnvGeo.setAttribute('uv', new THREE.Float32BufferAttribute(seUvs, 2));
       sideEnvGeo.setIndex(seIdx);
@@ -1871,7 +2011,6 @@
         worldGroup.add(frame);
       }
 
-      // 배경 건물 및 스카이라인
       const houseColors = [0xfef08a, 0xfed7aa, 0xbfdbfe, 0xfbcfe8, 0xd9f99d];
       const roofColors = [0xea580c, 0x0284c7, 0xdc2626, 0x4f46e5];
       const skyTex1 = createBuildingWindowTexture('#60a5fa', '#e0f2fe');
@@ -2066,7 +2205,7 @@
     }
 
     /********************************************************************
-     * 7. '?' 물음표 아이템 상자 (빠른 리스폰 + 바닥 홀로그램 패드 시각화)
+     * 7. '?' 물음표 아이템 상자 & 트랙 위 '지우개 거미줄 함정'
      ********************************************************************/
     let itemBoxes = [];
     const activeTraps = [];
@@ -2156,17 +2295,36 @@
       });
     }
 
+    // 도로 위에 설치되는 '지우개 + 바닥 거미줄 덫' 메쉬
     function spawnEraserTrap(scene, pos) {
-      const geo = new THREE.BoxGeometry(2.4, 0.95, 1.6);
-      const mat = new THREE.MeshLambertMaterial({ color: 0xf472b6 });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(pos.x, 0.55, pos.z);
-      scene.add(mesh);
-      activeTraps.push({ mesh, pos: mesh.position.clone(), life: 18 });
+      const trapGroup = new THREE.Group();
+      const eraserRubber = new THREE.Mesh(
+        new THREE.BoxGeometry(2.4, 1.0, 1.6),
+        new THREE.MeshLambertMaterial({ color: 0xf472b6 })
+      );
+      eraserRubber.position.y = 0.5;
+      const eraserSleeve = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 1.05, 1.65),
+        new THREE.MeshLambertMaterial({ color: 0x3b82f6 })
+      );
+      eraserSleeve.position.y = 0.5;
+
+      // 지우개 주변 바닥에 펼쳐진 하얀 거미줄 망
+      const webFloor = new THREE.Mesh(
+        new THREE.RingGeometry(0.4, 3.2, 8, 3),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, side: THREE.DoubleSide })
+      );
+      webFloor.rotation.x = -Math.PI / 2;
+      webFloor.position.y = 0.06;
+
+      trapGroup.add(eraserRubber, eraserSleeve, webFloor);
+      trapGroup.position.set(pos.x, 0.18, pos.z);
+      scene.add(trapGroup);
+      activeTraps.push({ mesh: trapGroup, pos: trapGroup.position.clone(), life: 20 });
     }
 
     /********************************************************************
-     * 8. Racer 클래스 (출발선 뒤 대기 시 lap = 0으로 시작하여 1바퀴 버그 해결)
+     * 8. Racer 클래스 (극적인 아이템 상태이상 타이머 & 자석 레이저빔 추가)
      ********************************************************************/
     class Racer {
       constructor(index, racerData, isPlayer, scene) {
@@ -2177,6 +2335,13 @@
 
         this.mesh = createRacerKartMesh(racerData);
         scene.add(this.mesh);
+
+        // 클립 자석 발동 시 앞차와 연결되는 전기 레이저 빔 라인
+        const beamGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+        const beamMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 3 });
+        this.magnetBeamLine = new THREE.Line(beamGeo, beamMat);
+        this.magnetBeamLine.visible = false;
+        scene.add(this.magnetBeamLine);
 
         this.aiPreferredLane = ((index % 4) - 1.5) * 4.8;
         this.aiSpeedVariance = 0.97 + (index % 3) * 0.02;
@@ -2220,18 +2385,36 @@
 
         this.heldItems = [];
         this.aiItemWait = 0;
+
+        // 극적인 아이템 상태이상 타이머들
         this.slowTimer = 0;
+        this.webTimer = 0;      // 지우개 밟았을 때 2초간 거미줄 속박
+        this.bubbleTimer = 0;   // 잉크 물폭탄 맞았을 때 물감옥 부유
+        this.spinTimer = 0;     // 포스트잇 회오리 맞았을 때 강제 360도 스핀
         this.shieldTimer = 0;
         this.magnetTimer = 0;
         this.warpTimer = 0;
 
+        if (this.magnetBeamLine) this.magnetBeamLine.visible = false;
         this.syncMesh();
       }
 
-      syncMesh() {
+      syncMesh(now = 0) {
         this.mesh.position.copy(this.pos);
+
+        // 물감옥(bubbleTimer) 상태일 때는 공중으로 붕 떠서 출렁거림
+        if (this.bubbleTimer > 0) {
+          this.mesh.position.y = this.pos.y + 1.45 + Math.sin(now * 0.015) * 0.35;
+        }
+        // 거미줄(webTimer)에 묶여 있을 때는 좌우로 몸부림치듯 떨림
+        if (this.webTimer > 0) {
+          this.mesh.position.x += Math.sin(now * 0.06) * 0.16;
+        }
+
         const slipYaw = this.isDrifting ? this.driftDir * 0.22 : 0;
-        this.mesh.rotation.y = this.heading + slipYaw;
+        // 회오리(spinTimer) 상태일 때는 차체가 팽이처럼 빙글빙글 회전
+        const spinYaw = this.spinTimer > 0 ? this.spinTimer * 14.0 : 0;
+        this.mesh.rotation.y = this.heading + slipYaw + spinYaw;
 
         const susp = this.mesh.userData.suspensionGroup;
         if (susp) {
@@ -2252,14 +2435,56 @@
           });
         }
 
-        const flames = this.mesh.userData.flames;
-        if (flames) {
-          const showFlame = (this.boostTimer > 0 || this.warpTimer > 0);
-          flames[0].visible = showFlame;
-          flames[1].visible = showFlame;
+        // 1) 초대형 부스터 화염 & 에어로 실드 콘 애니메이션
+        const megaBoost = this.mesh.userData.megaBoostGroup;
+        if (megaBoost) {
+          const isBoosting = (this.boostTimer > 0 || this.warpTimer > 0);
+          megaBoost.visible = isBoosting;
+          if (isBoosting) {
+            const pulse = 1.0 + Math.sin(now * 0.04) * 0.18;
+            megaBoost.scale.set(pulse, pulse, 1.0 + Math.cos(now * 0.05) * 0.22);
+          }
         }
-        if (this.mesh.userData.shieldMesh) {
-          this.mesh.userData.shieldMesh.visible = (this.shieldTimer > 0);
+
+        // 2) 색종이 방어막 회전
+        const shield = this.mesh.userData.shieldMesh;
+        if (shield) {
+          shield.visible = (this.shieldTimer > 0);
+          if (this.shieldTimer > 0) shield.rotation.y += 0.06;
+        }
+
+        // 3) 거미줄 케이지 표시
+        const spiderWeb = this.mesh.userData.spiderWebMesh;
+        if (spiderWeb) {
+          spiderWeb.visible = (this.webTimer > 0);
+          if (this.webTimer > 0) {
+            const s = 1.0 + Math.sin(now * 0.03) * 0.06;
+            spiderWeb.scale.set(s, s, s);
+          }
+        }
+
+        // 4) 잉크 물감옥 방울 표시
+        const waterPrison = this.mesh.userData.waterPrisonMesh;
+        if (waterPrison) {
+          waterPrison.visible = (this.bubbleTimer > 0);
+          if (this.bubbleTimer > 0) waterPrison.rotation.y -= 0.05;
+        }
+
+        // 5) 황금 워프 오라 회전
+        const warpAura = this.mesh.userData.warpAuraMesh;
+        if (warpAura) {
+          warpAura.visible = (this.warpTimer > 0);
+          if (this.warpTimer > 0) {
+            warpAura.rotation.y += 0.12;
+            warpAura.rotation.z += 0.08;
+          }
+        }
+
+        // 6) 포스트잇 회오리 토네이도 회전
+        const tornado = this.mesh.userData.tornadoMesh;
+        if (tornado) {
+          tornado.visible = (this.spinTimer > 0);
+          if (this.spinTimer > 0) tornado.rotation.y += 0.25;
         }
       }
     }
@@ -2418,7 +2643,7 @@
     }
 
     /********************************************************************
-     * 10. 순위 무관 완전 랜덤 아이템 추첨 및 2개 슬롯 순차 발동 로직
+     * 10. 극적인 아이템 발동 & 상태이상(거미줄 2초 감금, 물감옥, 회오리, 번개자석) 로직
      ********************************************************************/
     function rollRandomItem() {
       const allItemKeys = Object.keys(CONFIG.items);
@@ -2428,15 +2653,22 @@
 
     function triggerBoost(racer, duration = CONFIG.boostDuration) {
       racer.boostTimer = Math.max(racer.boostTimer, duration * racer.data.bonus.boostDurMul);
+      // 부스터 발동 시 거미줄/물감옥/회오리 즉시 해제하며 폭발적 가속!
+      racer.webTimer = 0;
+      racer.bubbleTimer = 0;
+      racer.spinTimer = 0;
+
       const fwdX = Math.sin(racer.heading);
       const fwdZ = Math.cos(racer.heading);
-      racer.velX += fwdX * 15;
-      racer.velZ += fwdZ * 15;
-      racer.bodyPitch = -0.11;
+      racer.velX += fwdX * 22;
+      racer.velZ += fwdZ * 22;
+      racer.bodyPitch = -0.15;
 
       if (racer.isPlayer) {
         sfx.playBoost();
         document.getElementById('speed-lines').classList.add('active');
+        document.getElementById('screen-status-fx').className = '';
+        document.getElementById('screen-status-fx').textContent = '';
       }
     }
 
@@ -2447,42 +2679,48 @@
         const item = racer.heldItems.shift();
 
         if (item.id === 'pencilBooster') {
-          triggerBoost(racer, 1.75);
-          if (racer.isPlayer) showToast('🚀 연필심 로켓 부스터 발동!');
+          triggerBoost(racer, 2.0);
+          if (racer.isPlayer) showToast('🚀 연필심 메가부스터 폭발 가속!!');
         } else if (item.id === 'paperShield') {
-          racer.shieldTimer = 4.0;
+          racer.shieldTimer = 4.5;
+          racer.webTimer = 0;
+          racer.bubbleTimer = 0;
+          racer.spinTimer = 0;
           if (racer.isPlayer) {
             sfx.playItemPickup();
-            showToast('🛡️ 색종이 방어막 가동!');
+            showToast('🛡️ 색종이 홀로그램 방어막 가동!');
           }
         } else if (item.id === 'eraserTrap') {
-          const backPos = racer.pos.clone().add(new THREE.Vector3(-Math.sin(racer.heading) * 3.5, 0, -Math.cos(racer.heading) * 3.5));
+          const backPos = racer.pos.clone().add(new THREE.Vector3(-Math.sin(racer.heading) * 3.8, 0, -Math.cos(racer.heading) * 3.8));
           spawnEraserTrap(scene, backPos);
-          if (racer.isPlayer) showToast('🧼 지우개 가루 뭉치 설치 완료!');
+          if (racer.isPlayer) showToast('🕸️ 지우개 거미줄 덫 설치! 밟는 차는 2초간 묶입니다!');
         } else if (item.id === 'inkSplash') {
           const target = racers.find(other => other.rank === racer.rank - 1);
           if (target) {
-            applySlowEffect(target, 1.35, `${racer.name}의 잉크 물방울 폭탄!`);
-            if (racer.isPlayer) showToast(`💧 앞선 ${target.data.name}에게 잉크 물폭탄 명중!`);
+            applyDramaticHazard(target, 'bubble', 1.85, `${racer.name}의 잉크 물감옥 폭탄!`);
+            if (racer.isPlayer) showToast(`💧 앞선 ${target.data.name}를 물감옥 방울에 가뒀습니다!`);
           } else {
-            triggerBoost(racer, 1.2);
+            triggerBoost(racer, 1.4);
           }
         } else if (item.id === 'clipMagnet') {
-          racer.magnetTimer = 2.1;
-          triggerBoost(racer, 1.5);
-          if (racer.isPlayer) showToast('🧲 클립 자석 견인! 앞차를 향해 끌려갑니다!');
+          racer.magnetTimer = 2.4;
+          triggerBoost(racer, 1.8);
+          if (racer.isPlayer) showToast('🧲 클립 번개자석 가동! 앞차에 전기 빔을 연결해 끌려갑니다!');
         } else if (item.id === 'warpSpring') {
-          racer.warpTimer = 2.5;
-          racer.shieldTimer = 2.5;
-          triggerBoost(racer, 2.5);
-          if (racer.isPlayer) showToast('⚡ 용수철 워프 부스터! 초고속 자동 주행!');
+          racer.warpTimer = 2.8;
+          racer.shieldTimer = 2.8;
+          triggerBoost(racer, 2.8);
+          if (racer.isPlayer) showToast('⚡ 용수철 황금워프! 황금 오라를 두르고 초고속 자동 돌파!');
         } else if (item.id === 'stickyNoteWave') {
+          let hitCount = 0;
           racers.forEach(other => {
             if (other !== racer && other.rank < racer.rank) {
-              applySlowEffect(other, 1.4, '포스트잇 맞바람!');
+              applyDramaticHazard(other, 'tornado', 1.6, '포스트잇 회오리 토네이도!');
+              hitCount++;
             }
           });
-          if (racer.isPlayer) showToast('🍃 포스트잇 바람개비로 앞선 차량들을 감속시켰습니다!');
+          if (hitCount === 0) triggerBoost(racer, 1.4);
+          if (racer.isPlayer) showToast('🌪️ 포스트잇 회오리 발동! 앞선 차량들을 토네이도로 돌렸습니다!');
         }
 
         if (racer.isPlayer) updateHUD();
@@ -2493,26 +2731,56 @@
         racer.boostCharges--;
         triggerBoost(racer, CONFIG.boostDuration);
         if (racer.isPlayer) {
-          showToast('🔥 드리프트 부스터 가속!');
+          showToast('🔥 드리프트 제트 부스터 가속!!');
           updateHUD();
         }
       }
     }
 
-    function applySlowEffect(target, baseSeconds, reasonText) {
+    // 거미줄 감금(web) / 물감옥(bubble) / 토네이도 스핀(tornado) 상태이상 적용 함수
+    function applyDramaticHazard(target, type, baseSeconds, reasonText) {
       if (target.shieldTimer > 0) {
         target.shieldTimer = 0;
-        if (target.isPlayer) showToast('🛡️ 색종이 방어막으로 공격을 막았습니다!');
+        if (target.isPlayer) showToast('🛡️ 색종이 방어막으로 공격을 완벽히 튕겨냈습니다!');
         return;
       }
-      const actualSec = baseSeconds / target.data.bonus.recoveryMul;
-      target.slowTimer = Math.max(target.slowTimer, actualSec);
-      target.velX *= 0.65;
-      target.velZ *= 0.65;
-      target.bodyPitch = 0.1;
-      if (target.isPlayer) {
-        sfx.playHit();
-        showToast(`⚠️ ${reasonText} (잠시 감속)`);
+
+      // 지우개 거미줄은 요청하신 대로 정확히 2초간 묶이도록 고정 (말랑 캐릭터만 회복 보너스 일부 적용)
+      const actualSec = type === 'web'
+        ? (target.data.id === 'mallang' ? 1.4 : 2.0)
+        : (baseSeconds / target.data.bonus.recoveryMul);
+
+      const screenFx = document.getElementById('screen-status-fx');
+
+      if (type === 'web') {
+        target.webTimer = Math.max(target.webTimer, actualSec);
+        target.velX = 0;
+        target.velZ = 0;
+        target.speed = 0;
+        if (target.isPlayer) {
+          sfx.playHit();
+          screenFx.className = 'webbed';
+          screenFx.textContent = '🕸️ 거미줄에 2초간 묶였습니다!!';
+          showToast('🕸️ 지우개 거미줄 덫을 밟아 2초 동안 움직일 수 없습니다!');
+        }
+      } else if (type === 'bubble') {
+        target.bubbleTimer = Math.max(target.bubbleTimer, actualSec);
+        target.velX *= 0.25;
+        target.velZ *= 0.25;
+        if (target.isPlayer) {
+          sfx.playHit();
+          screenFx.className = 'inked';
+          screenFx.textContent = '💧 물감옥 방울에 갇혔습니다!';
+          showToast(`💧 ${reasonText} (공중 물감옥 감속!)`);
+        }
+      } else if (type === 'tornado') {
+        target.spinTimer = Math.max(target.spinTimer, actualSec);
+        target.velX *= 0.35;
+        target.velZ *= 0.35;
+        if (target.isPlayer) {
+          sfx.playHit();
+          showToast(`🌪️ ${reasonText} (회오리에 휩쓸려 회전합니다!)`);
+        }
       }
     }
 
@@ -2520,7 +2788,10 @@
      * 11. 레이스 시작 흐름 및 조작 바인딩
      ********************************************************************/
     function setupRacers() {
-      racers.forEach(r => scene.remove(r.mesh));
+      racers.forEach(r => {
+        scene.remove(r.mesh);
+        if (r.magnetBeamLine) scene.remove(r.magnetBeamLine);
+      });
       racers = [];
 
       const chosenData = CONFIG.racers[selectedRacerIdx];
@@ -2541,6 +2812,8 @@
       document.getElementById('select-screen').classList.add('hidden');
       document.getElementById('result-screen').classList.add('hidden');
       document.getElementById('hud').classList.remove('hidden');
+      document.getElementById('screen-status-fx').className = '';
+      document.getElementById('screen-status-fx').textContent = '';
 
       setupRacers();
       updateHUD();
@@ -2577,6 +2850,8 @@
       document.getElementById('result-screen').classList.add('hidden');
       document.getElementById('hud').classList.add('hidden');
       document.getElementById('select-screen').classList.remove('hidden');
+      document.getElementById('screen-status-fx').className = '';
+      document.getElementById('screen-status-fx').textContent = '';
       gameState = 'SELECT';
     });
 
@@ -2627,9 +2902,9 @@
     });
 
     /********************************************************************
-     * 12. 물리 엔진 & 정확한 바퀴(Lap) 카운트 + 완전 랜덤 아이템 획득
+     * 12. 물리 엔진 & 극적인 아이템 상태 변화 업데이트
      ********************************************************************/
-    function updateRacerPhysics(racer, dt) {
+    function updateRacerPhysics(racer, dt, now) {
       const proj = getTrackProjection(racer.pos, racer.hintIdx);
       racer.hintIdx = proj.index;
 
@@ -2651,16 +2926,50 @@
       racer.lastS = proj.s;
       racer.totalProgress = (racer.lap - 1) + proj.s;
 
+      // 타이머 감소 및 화면 오버레이 해제
       if (racer.boostTimer > 0) {
         racer.boostTimer = Math.max(0, racer.boostTimer - dt);
-        if (racer.isPlayer && racer.boostTimer === 0) {
+        if (racer.isPlayer && racer.boostTimer === 0 && racer.warpTimer === 0) {
           document.getElementById('speed-lines').classList.remove('active');
         }
       }
+      if (racer.webTimer > 0) {
+        racer.webTimer = Math.max(0, racer.webTimer - dt);
+        if (racer.isPlayer && racer.webTimer === 0) {
+          const sfxEl = document.getElementById('screen-status-fx');
+          sfxEl.className = '';
+          sfxEl.textContent = '';
+          showToast('✨ 거미줄을 끊고 다시 출발합니다!');
+        }
+      }
+      if (racer.bubbleTimer > 0) {
+        racer.bubbleTimer = Math.max(0, racer.bubbleTimer - dt);
+        if (racer.isPlayer && racer.bubbleTimer === 0) {
+          const sfxEl = document.getElementById('screen-status-fx');
+          sfxEl.className = '';
+          sfxEl.textContent = '';
+        }
+      }
+      if (racer.spinTimer > 0) racer.spinTimer = Math.max(0, racer.spinTimer - dt);
       if (racer.slowTimer > 0) racer.slowTimer = Math.max(0, racer.slowTimer - dt);
       if (racer.shieldTimer > 0) racer.shieldTimer = Math.max(0, racer.shieldTimer - dt);
       if (racer.magnetTimer > 0) racer.magnetTimer = Math.max(0, racer.magnetTimer - dt);
-      if (racer.warpTimer > 0) racer.warpTimer = Math.max(0, racer.warpTimer - dt);
+      if (racer.warpTimer > 0) {
+        racer.warpTimer = Math.max(0, racer.warpTimer - dt);
+        if (racer.isPlayer && racer.warpTimer === 0 && racer.boostTimer === 0) {
+          document.getElementById('speed-lines').classList.remove('active');
+        }
+      }
+
+      // [핵심] 거미줄에 묶여 있는 2초 동안은 완전히 정지!
+      if (racer.webTimer > 0) {
+        racer.velX = 0;
+        racer.velZ = 0;
+        racer.speed = 0;
+        racer.isDrifting = false;
+        racer.syncMesh(now);
+        return;
+      }
 
       let maxSpd = CONFIG.baseMaxSpeed * racer.data.bonus.topSpeedMul;
       if (!racer.isPlayer) {
@@ -2674,7 +2983,9 @@
         }
       }
       if (racer.boostTimer > 0) maxSpd += CONFIG.boostBonusSpeed;
-      if (racer.warpTimer > 0) maxSpd += 18;
+      if (racer.warpTimer > 0) maxSpd += 24;
+      if (racer.bubbleTimer > 0) maxSpd *= 0.28; // 물감옥에 갇히면 대폭 감속
+      if (racer.spinTimer > 0) maxSpd *= 0.35;   // 회오리에 휘말리면 대폭 감속
       if (racer.slowTimer > 0) maxSpd *= 0.62;
 
       const phys = CONFIG.physics;
@@ -2687,7 +2998,7 @@
 
         racer.steerAngle = THREE.MathUtils.lerp(racer.steerAngle, targetSteer, dt * 8.5);
 
-        const wantsDrift = input.drift && Math.abs(targetSteer) > 0 && racer.speed > 24;
+        const wantsDrift = input.drift && Math.abs(targetSteer) > 0 && racer.speed > 24 && racer.bubbleTimer <= 0 && racer.spinTimer <= 0;
         if (wantsDrift) {
           racer.isDrifting = true;
           racer.driftDir = targetSteer;
@@ -2704,7 +3015,7 @@
               sfx.playItemPickup();
               showToast(`⚡ 부스터 충전 완료! (${racer.boostCharges}/${CONFIG.maxBoostCharges})`);
             } else {
-              triggerBoost(racer, 1.15);
+              triggerBoost(racer, 1.25);
             }
             racer.driftGauge = 0;
           }
@@ -2766,7 +3077,7 @@
 
       const prevForwardSpeed = forwardSpeed;
       if (wantsAccel) {
-        const accelRate = (racer.boostTimer > 0) ? phys.engineAccel * 1.8 : phys.engineAccel;
+        const accelRate = (racer.boostTimer > 0) ? phys.engineAccel * 2.2 : phys.engineAccel;
         forwardSpeed = THREE.MathUtils.lerp(forwardSpeed, maxSpd, dt * (accelRate / maxSpd));
       } else {
         forwardSpeed = THREE.MathUtils.lerp(forwardSpeed, 0, dt * (phys.naturalDecel / maxSpd));
@@ -2784,12 +3095,23 @@
       racer.velZ = fwdZ * forwardSpeed + rightZ * lateralSpeed;
       racer.speed = Math.hypot(racer.velX, racer.velZ);
 
+      // 클립 번개자석 견인 & 실시간 3D 레이저 빔 연결 연출
       if (racer.magnetTimer > 0) {
         const ahead = racers.find(o => o.rank === Math.max(1, racer.rank - 1) && o !== racer);
         if (ahead) {
           const pullVec = new THREE.Vector3().subVectors(ahead.pos, racer.pos).normalize();
-          racer.pos.addScaledVector(pullVec, 16 * dt);
+          racer.pos.addScaledVector(pullVec, 24 * dt);
+
+          const beamPosAttr = racer.magnetBeamLine.geometry.attributes.position;
+          beamPosAttr.setXYZ(0, racer.pos.x, 1.3, racer.pos.z);
+          beamPosAttr.setXYZ(1, ahead.pos.x, 1.3, ahead.pos.z);
+          beamPosAttr.needsUpdate = true;
+          racer.magnetBeamLine.visible = true;
+        } else {
+          racer.magnetBeamLine.visible = false;
         }
+      } else if (racer.magnetBeamLine) {
+        racer.magnetBeamLine.visible = false;
       }
 
       racer.pos.x += racer.velX * dt;
@@ -2798,7 +3120,7 @@
 
       const targetRoll = THREE.MathUtils.clamp(-racer.yawRate * (racer.speed / 60) * 0.14, -0.22, 0.22);
       const accelDelta = (forwardSpeed - prevForwardSpeed) / Math.max(0.01, dt);
-      const targetPitch = THREE.MathUtils.clamp(-accelDelta * 0.0022, -0.10, 0.10);
+      const targetPitch = THREE.MathUtils.clamp(-accelDelta * 0.0022, -0.12, 0.12);
 
       racer.bodyRoll = THREE.MathUtils.lerp(racer.bodyRoll, targetRoll, dt * phys.suspensionStiffness);
       racer.bodyPitch = THREE.MathUtils.lerp(racer.bodyPitch, targetPitch, dt * phys.suspensionStiffness);
@@ -2836,16 +3158,17 @@
         }
       });
 
+      // 지우개 거미줄 함정 충돌 판정 -> 2초간 거미줄 케이지에 감금!
       for (let i = activeTraps.length - 1; i >= 0; i--) {
         const trap = activeTraps[i];
-        if (racer.pos.distanceTo(trap.pos) < 2.3) {
-          applySlowEffect(racer, 1.25, '지우개 가루 뭉치를 밟았습니다!');
+        if (racer.pos.distanceTo(trap.pos) < 2.65) {
+          applyDramaticHazard(racer, 'web', 2.0, '지우개 거미줄 덫!');
           scene.remove(trap.mesh);
           activeTraps.splice(i, 1);
         }
       }
 
-      racer.syncMesh();
+      racer.syncMesh(now);
     }
 
     function resolveKartCollisions() {
@@ -2971,6 +3294,8 @@
     function finishPlayerRace() {
       gameState = 'RESULT';
       document.getElementById('speed-lines').classList.remove('active');
+      document.getElementById('screen-status-fx').className = '';
+      document.getElementById('screen-status-fx').textContent = '';
       sfx.playWin();
 
       const mapCfg = CONFIG.maps[selectedMapIdx];
@@ -2981,7 +3306,7 @@
     }
 
     /********************************************************************
-     * 14. 다이나믹 카메라 (바닥 아스팔트 차선이 훨씬 잘 보이는 시야각) & 메인 루프
+     * 14. 다이나믹 카메라 (부스터 발동 시 광각 FOV 확장 + 진동 효과) & 메인 루프
      ********************************************************************/
     let lastTime = performance.now();
     let camCurrentLook = new THREE.Vector3();
@@ -3011,6 +3336,7 @@
 
       for (let i = activeTraps.length - 1; i >= 0; i--) {
         activeTraps[i].life -= dt;
+        activeTraps[i].mesh.rotation.y += dt * 1.5;
         if (activeTraps[i].life <= 0) {
           scene.remove(activeTraps[i].mesh);
           activeTraps.splice(i, 1);
@@ -3021,7 +3347,7 @@
 
       if (gameState === 'RACING') {
         raceElapsed += dt;
-        racers.forEach(r => updateRacerPhysics(r, dt));
+        racers.forEach(r => updateRacerPhysics(r, dt, now));
         resolveKartCollisions();
         updateRankings();
         updateHUD();
@@ -3029,17 +3355,21 @@
 
       if (player && (gameState === 'RACING' || gameState === 'COUNTDOWN' || gameState === 'RESULT')) {
         const isBoosting = (player.boostTimer > 0 || player.warpTimer > 0);
-        const targetFov = isBoosting ? 74 : 62 + (player.speed / 85) * 6;
-        camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, dt * 6.0);
+        // 부스터 발동 시 시야각(FOV)이 82도까지 확 넓어지며 폭발적인 속도감 연출
+        const targetFov = isBoosting ? 82 : 62 + (player.speed / 85) * 6;
+        camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, dt * 7.5);
         camera.updateProjectionMatrix();
 
-        const camDist = isBoosting ? 13.5 : 11.6;
+        const camDist = isBoosting ? 14.2 : 11.6;
+        const shakeX = isBoosting ? (Math.random() - 0.5) * 0.22 : 0;
+        const shakeY = isBoosting ? (Math.random() - 0.5) * 0.18 : 0;
+
         const desiredCamPos = new THREE.Vector3(
-          player.pos.x - Math.sin(player.heading) * camDist,
-          player.pos.y + 6.4,
+          player.pos.x - Math.sin(player.heading) * camDist + shakeX,
+          player.pos.y + 6.4 + shakeY,
           player.pos.z - Math.cos(player.heading) * camDist
         );
-        camera.position.lerp(desiredCamPos, dt * 8.0);
+        camera.position.lerp(desiredCamPos, dt * 8.5);
 
         const lookTarget = new THREE.Vector3(
           player.pos.x + Math.sin(player.heading) * 11,
